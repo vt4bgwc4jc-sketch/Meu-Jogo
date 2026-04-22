@@ -6,71 +6,27 @@
 
 <style>
 body{margin:0;background:#000;color:#fff;font-family:Arial;overflow:hidden;}
+canvas{width:100%;height:60vh;background:linear-gradient(#444,#111);display:block;}
 
-canvas{
-width:100%;
-height:60vh;
-background:linear-gradient(#444,#111);
-display:block;
-}
-
-/* HUD */
-.hud{
-display:flex;
-justify-content:space-between;
-padding:5px;
-font-size:12px;
-}
-
-.barra{
-width:120px;
-height:10px;
-background:#333;
-margin-bottom:3px;
-}
+.hud{display:flex;justify-content:space-between;padding:5px;font-size:12px;}
+.barra{width:120px;height:10px;background:#333;margin-bottom:3px;}
 .vida{background:lime;height:100%;}
 .super{background:orange;height:100%;}
 
-/* CONTROLES */
-.controls{
-position:fixed;
-bottom:5px;
-width:100%;
-display:flex;
-justify-content:space-between;
-padding:0 10px;
-}
-
+.controls{position:fixed;bottom:5px;width:100%;display:flex;justify-content:space-between;padding:0 10px;}
 .player{display:flex;gap:6px;}
-
-button{
-width:55px;height:45px;
-border:none;border-radius:10px;
-font-size:16px;
-}
-
+button{width:55px;height:45px;border:none;border-radius:10px;font-size:16px;}
 .move{background:#555;color:white;}
 .soco{background:red;color:white;}
 .superBtn{background:orange;color:black;}
 
-.toggle{
-position:absolute;
-top:5px;
-right:5px;
-background:#444;
-color:white;
-}
+.toggle{position:absolute;top:5px;right:5px;background:#444;color:white;}
 
-/* TELA FINAL */
 #fim{
-position:fixed;
-top:0;left:0;width:100%;height:100%;
+position:fixed;top:0;left:0;width:100%;height:100%;
 background:rgba(0,0,0,0.9);
-display:none;
-align-items:center;
-justify-content:center;
-flex-direction:column;
-z-index:999;
+display:none;align-items:center;justify-content:center;
+flex-direction:column;z-index:999;
 }
 </style>
 </head>
@@ -80,14 +36,12 @@ z-index:999;
 <button class="toggle" onclick="toggle2P()">👥</button>
 
 <div class="hud">
-<div>
-AZUL
+<div>AZUL
 <div class="barra"><div id="vida1" class="vida"></div></div>
 <div class="barra"><div id="super1" class="super"></div></div>
 </div>
 
-<div>
-VERMELHO
+<div>VERMELHO
 <div class="barra"><div id="vida2" class="vida"></div></div>
 <div class="barra"><div id="super2" class="super"></div></div>
 </div>
@@ -103,19 +57,19 @@ VERMELHO
 <div class="controls">
 
 <div class="player">
-<button class="move" id="p1left">⬅️</button>
-<button class="move" id="p1jump">⬆️</button>
-<button class="move" id="p1right">➡️</button>
-<button class="soco" id="p1atk">👊</button>
-<button class="superBtn" id="p1sup">⚡</button>
+<button id="p1left">⬅️</button>
+<button id="p1jump">⬆️</button>
+<button id="p1right">➡️</button>
+<button id="p1atk">👊</button>
+<button id="p1sup">⚡</button>
 </div>
 
 <div class="player" id="p2controls" style="display:none;">
-<button class="move" id="p2left">⬅️</button>
-<button class="move" id="p2jump">⬆️</button>
-<button class="move" id="p2right">➡️</button>
-<button class="soco" id="p2atk">👊</button>
-<button class="superBtn" id="p2sup">⚡</button>
+<button id="p2left">⬅️</button>
+<button id="p2jump">⬆️</button>
+<button id="p2right">➡️</button>
+<button id="p2atk">👊</button>
+<button id="p2sup">⚡</button>
 </div>
 
 </div>
@@ -130,64 +84,57 @@ c.height=window.innerHeight*0.6;
 }
 resize();
 
-// PLAYER
 function create(x){
-return{
-x,y:0,vy:0,
-life:100,
-super:0,
-tomouDano:false
-};
+return{x,y:0,vy:0,life:100,super:0,tomouDano:false};
 }
 
 let p1=create(150);
 let p2=create(400);
 
+let keys={p1:{},p2:{}};
 let twoPlayers=false;
-let lastAI=0;
 let gameOver=false;
 
-let keys={p1:{},p2:{}};
-
-// TECLADO
+// 🎮 TECLADO COMPLETO
 document.addEventListener("keydown",e=>{
-if(e.key=="a")keys.p1.left=true;
-if(e.key=="d")keys.p1.right=true;
-if(e.key=="w")keys.p1.jump=true;
-if(e.key=="f")keys.p1.atk=true;
-if(e.key=="g")keys.p1.sup=true;
 
+// P1
+if(e.key.toLowerCase()=="a")keys.p1.left=true;
+if(e.key.toLowerCase()=="d")keys.p1.right=true;
+if(e.key.toLowerCase()=="w")keys.p1.jump=true;
+if(e.key.toLowerCase()=="f")keys.p1.atk=true;
+if(e.key.toLowerCase()=="g")keys.p1.sup=true;
+
+// P2
 if(e.key=="ArrowLeft")keys.p2.left=true;
 if(e.key=="ArrowRight")keys.p2.right=true;
 if(e.key=="ArrowUp")keys.p2.jump=true;
-if(e.key=="k")keys.p2.atk=true;
-if(e.key=="l")keys.p2.sup=true;
+if(e.key.toLowerCase()=="k")keys.p2.atk=true;
+if(e.key.toLowerCase()=="l")keys.p2.sup=true;
+
 });
 
 document.addEventListener("keyup",e=>{
-if(e.key=="a")keys.p1.left=false;
-if(e.key=="d")keys.p1.right=false;
-if(e.key=="w")keys.p1.jump=false;
-if(e.key=="f")keys.p1.atk=false;
-if(e.key=="g")keys.p1.sup=false;
+
+if(e.key.toLowerCase()=="a")keys.p1.left=false;
+if(e.key.toLowerCase()=="d")keys.p1.right=false;
+if(e.key.toLowerCase()=="w")keys.p1.jump=false;
+if(e.key.toLowerCase()=="f")keys.p1.atk=false;
+if(e.key.toLowerCase()=="g")keys.p1.sup=false;
 
 if(e.key=="ArrowLeft")keys.p2.left=false;
 if(e.key=="ArrowRight")keys.p2.right=false;
 if(e.key=="ArrowUp")keys.p2.jump=false;
-if(e.key=="k")keys.p2.atk=false;
-if(e.key=="l")keys.p2.sup=false;
+if(e.key.toLowerCase()=="k")keys.p2.atk=false;
+if(e.key.toLowerCase()=="l")keys.p2.sup=false;
+
 });
 
 // TOUCH
-function bind(id,player,action){
-let btn=document.getElementById(id);
-btn.addEventListener("touchstart",e=>{
-e.preventDefault();
-keys[player][action]=true;
-});
-btn.addEventListener("touchend",()=>{
-keys[player][action]=false;
-});
+function bind(id,p,a){
+let b=document.getElementById(id);
+b.addEventListener("touchstart",e=>{e.preventDefault();keys[p][a]=true;});
+b.addEventListener("touchend",()=>{keys[p][a]=false;});
 }
 
 bind("p1left","p1","left");
@@ -209,7 +156,6 @@ p.vy+=0.8;
 p.y+=p.vy;
 if(p.y>0){p.y=0;p.vy=0;}
 
-// REGEN
 if(p.life<100 && !p.tomouDano){
 p.life+=0.05;
 if(p.life>100)p.life=100;
@@ -219,28 +165,23 @@ p.tomouDano=false;
 
 // IA
 function ai(){
-if(twoPlayers || gameOver) return;
-
-let now=Date.now();
-if(now-lastAI<700)return;
-lastAI=now;
+if(twoPlayers||gameOver)return;
 
 let dist=Math.abs(p2.x-p1.x);
 
 if(dist>120){
-if(p2.x>p1.x)p2.x-=5;
-else p2.x+=5;
+if(p2.x>p1.x)p2.x-=3;
+else p2.x+=3;
 }
 
-if(dist<120 && Math.random()<0.5){
-p1.life-=3;
+if(dist<120 && Math.random()<0.3){
+p1.life-=2;
 p1.tomouDano=true;
 }
 }
 
-// CONTROLE
 function control(){
-if(gameOver) return;
+if(gameOver)return;
 
 if(keys.p1.left)p1.x-=5;
 if(keys.p1.right)p1.x+=5;
@@ -279,26 +220,21 @@ p2.super=0;
 }
 }
 
-// DESENHAR
 function draw(p,color){
-let g=ground();
-let x=p.x,y=g+p.y;
+let x=p.x,y=ground()+p.y;
 
 ctx.strokeStyle=color;
 ctx.lineWidth=3;
 
-// cabeça
 ctx.beginPath();
 ctx.arc(x,y-80,10,0,Math.PI*2);
 ctx.stroke();
 
-// corpo
 ctx.beginPath();
 ctx.moveTo(x,y-70);
 ctx.lineTo(x,y-30);
 ctx.stroke();
 
-// braços
 ctx.beginPath();
 ctx.moveTo(x,y-55);
 ctx.lineTo(x-20,y-40);
@@ -306,7 +242,6 @@ ctx.moveTo(x,y-55);
 ctx.lineTo(x+20,y-40);
 ctx.stroke();
 
-// pernas
 ctx.beginPath();
 ctx.moveTo(x,y-30);
 ctx.lineTo(x-15,y);
@@ -315,43 +250,35 @@ ctx.lineTo(x+15,y);
 ctx.stroke();
 }
 
-// FIM
 function checkFim(){
-if(p1.life<=0){
-mostrarFim(twoPlayers?"🔴 Vermelho venceu":"💀 Você perdeu");
-}
-if(p2.life<=0){
-mostrarFim(twoPlayers?"🔵 Azul venceu":"🏆 Você venceu");
-}
+if(p1.life<=0)mostrarFim(twoPlayers?"🔴 Vermelho venceu":"💀 Você perdeu");
+if(p2.life<=0)mostrarFim(twoPlayers?"🔵 Azul venceu":"🏆 Você venceu");
 }
 
-function mostrarFim(txt){
+function mostrarFim(t){
 gameOver=true;
-document.getElementById("fim").style.display="flex";
-document.getElementById("textoFim").innerText=txt;
+fim.style.display="flex";
+textoFim.innerText=t;
 }
 
 function reset(){
 p1=create(150);
 p2=create(400);
 gameOver=false;
-document.getElementById("fim").style.display="none";
+fim.style.display="none";
 }
 
-// LOOP
 function loop(){
 ctx.clearRect(0,0,c.width,c.height);
 
 physics(p1);
 physics(p2);
-
 control();
 ai();
 
 draw(p1,"cyan");
 draw(p2,"red");
 
-// HUD
 vida1.style.width=p1.life+"%";
 vida2.style.width=p2.life+"%";
 super1.style.width=p1.super+"%";
@@ -364,8 +291,7 @@ requestAnimationFrame(loop);
 
 function toggle2P(){
 twoPlayers=!twoPlayers;
-document.getElementById("p2controls").style.display=
-twoPlayers?"flex":"none";
+p2controls.style.display=twoPlayers?"flex":"none";
 }
 
 loop();
