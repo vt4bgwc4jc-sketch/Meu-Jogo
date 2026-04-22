@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Stick Fight PRO FINAL</title>
+
+<style>
+body{margin:0;background:#000;color:#fff;font-family:Arial;overflow:hidden;}
+
+canvas{
+width:100%;
+height:55vh;
+background:linear-gradient(#444,#111);
+display:block;
+}
+
+.hud{
+display:flex;
+justify-content:space-between;
+padding:5px;
+font-size:12px;
+}
+
+.barra{
+width:120px;
+height:8px;
+background:#333;
+margin-bottom:2px;
+}
+.vida{background:lime;height:100%;}
+.super{background:orange;height:100%;}
+
+.controls{
+position:fixed;
+bottom:5px;
+width:100%;
+display:flex;
+justify-content:space-between;
+padding:0 10px;
+}
+
+.player{display:flex;gap:6px;}
+
+button{
+width:55px;height:45px;
+border:none;border-radius:10px;
+font-size:16px;
+}
+
+.move{background:#555;color:white;}
+.soco{background:red;color:white;}
+.superBtn{background:orange;color:black;}
+
+.toggle{
+position:absolute;
+top:5px;
+right:5px;
+background:#444;
+color:white;
+}
+
+/* TELA FINAL */
+#fim{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+display:none;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+z-index:999;
+}
+</style>
+</head>
+
+<body>
+
+<button class="toggle" onclick="toggle2P()">👥</button>
+
+<div class="hud">
+<div>
+AZUL
+<div class="barra"><div id="vida1" class="vida"></div></div>
+<div class="barra"><div id="super1" class="super"></div></div>
+</div>
+
+<div>
+VERMELHO
+<div class="barra"><div id="vida2" class="vida"></div></div>
+<div class="barra"><div id="super2" class="super"></div></div>
+</div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="fim">
+<h1 id="textoFim"></h1>
+<button onclick="reset()">🔄 Jogar novamente</button>
+</div>
+
+<div class="controls">
+
+<div class="player">
+<button class="move" id="p1left">⬅️</button>
+<button class="move" id="p1jump">⬆️</button>
+<button class="move" id="p1right">➡️</button>
+<button class="soco" id="p1atk">👊</button>
+<button class="superBtn" id="p1sup">⚡</button>
+</div>
+
+<div class="player" id="p2controls" style="display:none;">
+<button class="move" id="p2left">⬅️</button>
+<button class="move" id="p2jump">⬆️</button>
+<button class="move" id="p2right">➡️</button>
+<button class="soco" id="p2atk">👊</button>
+<button class="superBtn" id="p2sup">⚡</button>
+</div>
+
+</div>
+
+<script>
+const c=document.getElementById("game");
+const ctx=c.getContext("2d");
+
+function resize(){
+c.width=window.innerWidth;
+c.height=window.innerHeight*0.55;
+}
+resize();
+
+// PLAYER
+function create(x){
+return{
+x,y:0,vy:0,
+life:100,
+super:0,
+tomouDano:false
+};
+}
+
+let p1=create(150);
+let p2=create(400);
+
+let twoPlayers=false;
+let lastAI=0;
+let gameOver=false;
+
+let keys={p1:{},p2:{}};
+
+// TECLADO
+document.addEventListener("keydown",e=>{
+if(e.key=="a")keys.p1.left=true;
+if(e.key=="d")keys.p1.right=true;
+if(e.key=="w")keys.p1.jump=true;
+if(e.key=="f")keys.p1.atk=true;
+if(e.key=="g")keys.p1.sup=true;
+
+if(e.key=="ArrowLeft")keys.p2.left=true;
+if(e.key=="ArrowRight")keys.p2.right=true;
+if(e.key=="ArrowUp")keys.p2.jump=true;
+if(e.key=="k")keys.p2.atk=true;
+if(e.key=="l")keys.p2.sup=true;
+});
+
+document.addEventListener("keyup",e=>{
+if(e.key=="a")keys.p1.left=false;
+if(e.key=="d")keys.p1.right=false;
+if(e.key=="w")keys.p1.jump=false;
+if(e.key=="f")keys.p1.atk=false;
+if(e.key=="g")keys.p1.sup=false;
+
+if(e.key=="ArrowLeft")keys.p2.left=false;
+if(e.key=="ArrowRight")keys.p2.right=false;
+if(e.key=="ArrowUp")keys.p2.jump=false;
+if(e.key=="k")keys.p2.atk=false;
+if(e.key=="l")keys.p2.sup=false;
+});
+
+// TOUCH
+function bind(id,player,action){
+let btn=document.getElementById(id);
+btn.addEventListener("touchstart",e=>{
+e.preventDefault();
+keys[player][action]=true;
+});
+btn.addEventListener("touchend",()=>{
+keys[player][action]=false;
+});
+}
+
+bind("p1left","p1","left");
+bind("p1right","p1","right");
+bind("p1jump","p1","jump");
+bind("p1atk","p1","atk");
+bind("p1sup","p1","sup");
+
+bind("p2left","p2","left");
+bind("p2right","p2","right");
+bind("p2jump","p2","jump");
+bind("p2atk","p2","atk");
+bind("p2sup","p2","sup");
+
+function ground(){return c.height*0.7;}
+
+function physics(p){
+p.vy+=0.8;
+p.y+=p.vy;
+if(p.y>0){p.y=0;p.vy=0;}
+
+// ❤️ REGENERAÇÃO
+if(p.life<100 && !p.tomouDano){
+p.life+=0.05;
+if(p.life>100)p.life=100;
+}
+
+// reset dano
+p.tomouDano=false;
+}
+
+// IA
+function ai(){
+if(twoPlayers || gameOver) return;
+
+let now=Date.now();
+if(now-lastAI<700)return;
+lastAI=now;
+
+let dist=Math.abs(p2.x-p1.x);
+
+if(dist>120){
+if(p2.x>p1.x)p2.x-=5;
+else p2.x+=5;
+}
+
+if(dist<120 && Math.random()<0.5){
+p1.life-=3;
+p1.tomouDano=true;
+}
+}
+
+// CONTROLE
+function control(){
+if(gameOver) return;
+
+if(keys.p1.atk && Math.abs(p1.x-p2.x)<120){
+p2.life-=1;
+p2.tomouDano=true;
+p1.super=Math.min(100,p1.super+1);
+}
+
+if(twoPlayers && keys.p2.atk && Math.abs(p1.x-p2.x)<120){
+p1.life-=1;
+p1.tomouDano=true;
+p2.super=Math.min(100,p2.super+1);
+}
+}
+
+// LOOP
+function loop(){
+ctx.clearRect(0,0,c.width,c.height);
+
+physics(p1);
+physics(p2);
+
+control();
+ai();
+
+// HUD
+vida1.style.width=p1.life+"%";
+vida2.style.width=p2.life+"%";
+super1.style.width=p1.super+"%";
+super2.style.width=p2.super+"%";
+
+requestAnimationFrame(loop);
+}
+
+function toggle2P(){
+twoPlayers=!twoPlayers;
+document.getElementById("p2controls").style.display=
+twoPlayers?"flex":"none";
+}
+
+loop();
+</script>
+
+</body>
+</html>
