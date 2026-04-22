@@ -2,18 +2,19 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Stick Fight PRO FINAL</title>
+<title>Stick Fight PRO</title>
 
 <style>
 body{margin:0;background:#000;color:#fff;font-family:Arial;overflow:hidden;}
 
 canvas{
 width:100%;
-height:55vh;
+height:60vh;
 background:linear-gradient(#444,#111);
 display:block;
 }
 
+/* HUD */
 .hud{
 display:flex;
 justify-content:space-between;
@@ -23,13 +24,14 @@ font-size:12px;
 
 .barra{
 width:120px;
-height:8px;
+height:10px;
 background:#333;
-margin-bottom:2px;
+margin-bottom:3px;
 }
 .vida{background:lime;height:100%;}
 .super{background:orange;height:100%;}
 
+/* CONTROLES */
 .controls{
 position:fixed;
 bottom:5px;
@@ -62,10 +64,7 @@ color:white;
 /* TELA FINAL */
 #fim{
 position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
+top:0;left:0;width:100%;height:100%;
 background:rgba(0,0,0,0.9);
 display:none;
 align-items:center;
@@ -127,7 +126,7 @@ const ctx=c.getContext("2d");
 
 function resize(){
 c.width=window.innerWidth;
-c.height=window.innerHeight*0.55;
+c.height=window.innerHeight*0.6;
 }
 resize();
 
@@ -210,13 +209,11 @@ p.vy+=0.8;
 p.y+=p.vy;
 if(p.y>0){p.y=0;p.vy=0;}
 
-// ❤️ REGENERAÇÃO
+// REGEN
 if(p.life<100 && !p.tomouDano){
 p.life+=0.05;
 if(p.life>100)p.life=100;
 }
-
-// reset dano
 p.tomouDano=false;
 }
 
@@ -245,6 +242,17 @@ p1.tomouDano=true;
 function control(){
 if(gameOver) return;
 
+if(keys.p1.left)p1.x-=5;
+if(keys.p1.right)p1.x+=5;
+if(keys.p1.jump && p1.vy===0)p1.vy=-12;
+
+if(twoPlayers){
+if(keys.p2.left)p2.x-=5;
+if(keys.p2.right)p2.x+=5;
+if(keys.p2.jump && p2.vy===0)p2.vy=-12;
+}
+
+// ATAQUE
 if(keys.p1.atk && Math.abs(p1.x-p2.x)<120){
 p2.life-=1;
 p2.tomouDano=true;
@@ -256,6 +264,78 @@ p1.life-=1;
 p1.tomouDano=true;
 p2.super=Math.min(100,p2.super+1);
 }
+
+// SUPER
+if(keys.p1.sup && p1.super>=100){
+p2.life-=20;
+p2.tomouDano=true;
+p1.super=0;
+}
+
+if(twoPlayers && keys.p2.sup && p2.super>=100){
+p1.life-=20;
+p1.tomouDano=true;
+p2.super=0;
+}
+}
+
+// DESENHAR
+function draw(p,color){
+let g=ground();
+let x=p.x,y=g+p.y;
+
+ctx.strokeStyle=color;
+ctx.lineWidth=3;
+
+// cabeça
+ctx.beginPath();
+ctx.arc(x,y-80,10,0,Math.PI*2);
+ctx.stroke();
+
+// corpo
+ctx.beginPath();
+ctx.moveTo(x,y-70);
+ctx.lineTo(x,y-30);
+ctx.stroke();
+
+// braços
+ctx.beginPath();
+ctx.moveTo(x,y-55);
+ctx.lineTo(x-20,y-40);
+ctx.moveTo(x,y-55);
+ctx.lineTo(x+20,y-40);
+ctx.stroke();
+
+// pernas
+ctx.beginPath();
+ctx.moveTo(x,y-30);
+ctx.lineTo(x-15,y);
+ctx.moveTo(x,y-30);
+ctx.lineTo(x+15,y);
+ctx.stroke();
+}
+
+// FIM
+function checkFim(){
+if(p1.life<=0){
+mostrarFim(twoPlayers?"🔴 Vermelho venceu":"💀 Você perdeu");
+}
+if(p2.life<=0){
+mostrarFim(twoPlayers?"🔵 Azul venceu":"🏆 Você venceu");
+}
+}
+
+function mostrarFim(txt){
+gameOver=true;
+document.getElementById("fim").style.display="flex";
+document.getElementById("textoFim").innerText=txt;
+}
+
+function reset(){
+p1=create(150);
+p2=create(400);
+gameOver=false;
+document.getElementById("fim").style.display="none";
 }
 
 // LOOP
@@ -268,11 +348,16 @@ physics(p2);
 control();
 ai();
 
+draw(p1,"cyan");
+draw(p2,"red");
+
 // HUD
 vida1.style.width=p1.life+"%";
 vida2.style.width=p2.life+"%";
 super1.style.width=p1.super+"%";
 super2.style.width=p2.super+"%";
+
+checkFim();
 
 requestAnimationFrame(loop);
 }
